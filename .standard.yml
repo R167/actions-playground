@@ -1,0 +1,4 @@
+format: progress
+ignore:
+  - '**/*':
+    - Standard/SemanticBlocks

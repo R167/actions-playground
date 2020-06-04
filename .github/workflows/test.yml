@@ -1,0 +1,54 @@
+# Run actions
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - master
+      - actions-*
+    tags:
+      - v*
+  pull_request:
+  pull_request_review_comment:
+    types: [ created ]
+env:
+  BUNDLE_CLEAN: "true"
+  BUNDLE_PATH: vendor/bundle
+  BUNDLE_JOBS: 3
+  BUNDLE_RETRY: 3
+jobs:
+  specs:
+    name: ${{ matrix.job }} ruby-${{ matrix.ruby }}
+    runs-on: ubuntu-latest
+    if: |
+      contains(['push', 'pull_request'], github.event_name) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'rerun'))
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ 2.7 ]
+        job: [ rspec ]
+        include:
+          - ruby: 2.7
+            job: standardrb
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: bundler gem cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.BUNDLE_PATH }}
+          key: bundle-use-ruby-${{ matrix.os }}-${{ matrix.ruby }}-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            bundle-use-ruby-${{ matrix.os }}-${{ matrix.ruby }}-
+            bundle-use-ruby-${{ matrix.os }}-
+      - run:  bundle install
+      - name: specs
+        if:   matrix.job == 'rspec'
+        run:  bundle exec ruby test.rb
+      - name: standardrb
+        if:   matrix.job == 'standardrb'
+        run:  bundle exec rake standard
