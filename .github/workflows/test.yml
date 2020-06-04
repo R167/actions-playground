@@ -49,7 +49,9 @@ jobs:
       - run:  bundle install
       - name: specs
         if:   matrix.job == 'rspec'
-        run:  bundle exec ruby test.rb
+        run: |
+          bundle config
+          bundle exec ruby test.rb
       - name: standardrb
         if:   matrix.job == 'standardrb'
         run:  bundle exec rake standard
